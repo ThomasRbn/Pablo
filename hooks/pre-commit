@@ -19,9 +19,22 @@ for path in "${staged[@]}"; do
 	rel_paths+=("${path#pablo-web/}")
 done
 
-(
+set +e
+output="$(
 	cd pablo-web
-	bunx biome check --write -- "${rel_paths[@]}"
-)
+	bunx biome check --write -- "${rel_paths[@]}" 2>&1
+)"
+status=$?
+set -e
 
+if [[ $status -ne 0 ]]; then
+	# Staged paths may all be outside biome.json includes (e.g. AGENTS.md)
+	if [[ "$output" == *"No files were processed"* ]]; then
+		exit 0
+	fi
+	printf '%s\n' "$output"
+	exit "$status"
+fi
+
+printf '%s\n' "$output"
 git add -- "${staged[@]}"

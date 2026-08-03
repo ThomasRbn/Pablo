@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
+    "theme:build": "bun run astryx theme build src/theme/pablo-theme.ts",
+    "prebuild": "bun run theme:build && bun run generate-routes",
     "build": "vite build",
     "preview": "vite preview",
     "format": "biome format",

@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "astryx": "node node_modules/@astryxdesign/cli/bin/astryx.mjs"
   },
   "dependencies": {
     "@astryxdesign/cli": "^0.2.0",

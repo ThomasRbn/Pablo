@@ -1,0 +1,48 @@
+name: opencode-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: opencode-go/deepseek-v4-flash
+          use_github_token: true
+          prompt: |
+            Review this pull request
+
+            Focus only on the diff. Prioritize, in order:
+            1. Correctness bugs, regressions, broken edge cases
+            2. Security issues (secrets, XSS, unsafe HTML, auth/authz mistakes)
+            3. Missing error handling or invalid assumptions about data/nullability
+            4. Clear maintainability problems that will cause real pain later
+
+            Project context:
+            - React 19 + TypeScript + TanStack Router + Vite
+            - UI should follow Astryx components/tokens (prefer components over raw div/layout CSS)
+            - Tailwind utilities should use design tokens, not raw hex/arbitrary values
+
+            Review rules:
+            - Be specific: cite file paths and line-level issues when possible
+            - Explain why each issue matters and suggest a concrete fix
+            - Skip style nits, preference bikesheds, and things a linter/formatter already covers
+            - Do not praise trivial changes; if the PR looks solid, say so briefly and stop
+            - Do not modify files — only leave review comments
+            - Group findings by severity: Blocking, Suggestion, Nit (use Nit sparingly)
+
+            If there are no meaningful issues, reply with: "No blocking issues found."

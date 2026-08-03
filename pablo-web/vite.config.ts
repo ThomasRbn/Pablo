@@ -11,7 +11,7 @@ const config = defineConfig(({ command }) => ({
 		tailwindcss(),
 		tanstackRouter({ target: "react", autoCodeSplitting: true }),
 		viteReact(),
-	],
+	].filter(Boolean),
 }));
 
 export default config;

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run biome check --write only when staged files live under pablo-web/
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+staged=()
+while IFS= read -r -d '' path; do
+	staged+=("$path")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- pablo-web/)
+
+if [[ ${#staged[@]} -eq 0 ]]; then
+	exit 0
+fi
+
+rel_paths=()
+for path in "${staged[@]}"; do
+	rel_paths+=("${path#pablo-web/}")
+done
+
+(
+	cd pablo-web
+	bunx biome check --write -- "${rel_paths[@]}"
+)
+
+git add -- "${staged[@]}"

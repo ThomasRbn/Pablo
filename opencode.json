@@ -8,11 +8,10 @@
     "question": "deny"
   },
   "agent": {
-    "review": {
-      "description": "PR review without modifying files",
-      "mode": "primary",
+    "plan": {
       "permission": {
         "edit": "deny",
+        "bash": "deny",
         "question": "deny",
         "external_directory": {
           "/tmp/*": "allow",

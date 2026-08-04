@@ -29,7 +29,6 @@ try
     {
         options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     });
-    app.UseHttpsRedirection();
     app.MapControllers();
     app.MapHealthChecks("/health");
 
@@ -39,6 +38,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+    throw;
 }
 finally
 {

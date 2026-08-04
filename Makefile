@@ -1,7 +1,8 @@
 SOLUTION := pablo/pablo.slnx
 API_PROJECT := pablo/src/Pablo.API
+WEB_DIR := pablo-web
 
-.PHONY: install-hooks restore build run watch test clean
+.PHONY: install-hooks restore build run watch test format clean
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -22,6 +23,10 @@ watch:
 
 test:
 	dotnet test $(SOLUTION)
+
+format:
+	dotnet format $(SOLUTION)
+	cd $(WEB_DIR) && bunx biome check --write .
 
 clean:
 	dotnet clean $(SOLUTION)

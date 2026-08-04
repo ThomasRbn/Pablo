@@ -9,7 +9,7 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "theme:build": "bun run astryx theme build src/theme/pablo-theme.ts",
-    "prebuild": "bun run theme:build && bun run generate-routes",
+    "prebuild": "bun run generate-routes",
     "build": "vite build",
     "preview": "vite preview",
     "format": "biome format",
@@ -41,11 +41,5 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
   }
 }

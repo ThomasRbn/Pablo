@@ -21,6 +21,21 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # agent: input is ignored by `opencode github run` (falls back to build).
+          # https://github.com/anomalyco/opencode/issues/21730
+          OPENCODE_CONFIG_CONTENT: |
+            {
+              "default_agent": "plan",
+              "permission": {
+                "bash": "deny",
+                "edit": "deny",
+                "question": "deny",
+                "external_directory": {
+                  "/tmp/*": "allow",
+                  "/tmp/**": "allow"
+                }
+              }
+            }
         with:
           model: opencode-go/kimi-k2.7-code
           agent: plan

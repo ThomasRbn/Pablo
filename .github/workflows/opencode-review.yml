@@ -12,17 +12,32 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
-      issues: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: anomalyco/opencode/github@a3b97d9090ccf4aa9ac32268486283e3131e36b4 # github-v1.2.25
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # agent: input is ignored by `opencode github run` (falls back to build).
+          # https://github.com/anomalyco/opencode/issues/21730
+          OPENCODE_CONFIG_CONTENT: |
+            {
+              "default_agent": "plan",
+              "permission": {
+                "bash": "deny",
+                "edit": "deny",
+                "question": "deny",
+                "external_directory": {
+                  "/tmp/*": "allow",
+                  "/tmp/**": "allow"
+                }
+              }
+            }
         with:
           model: opencode-go/kimi-k2.7-code
+          agent: plan
           use_github_token: true
           prompt: |
             Review this pull request

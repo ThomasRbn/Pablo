@@ -23,6 +23,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode-go/kimi-k2.7-code
+          agent: review
           use_github_token: true
           prompt: |
             Review this pull request

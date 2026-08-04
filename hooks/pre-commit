@@ -1,40 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run biome check --write only when staged files live under pablo-web/
+# Format staged frontend (biome) and backend (dotnet format) files, then re-stage.
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
-staged=()
+# --- Frontend: biome check --write when staged files live under pablo-web/ ---
+web_staged=()
 while IFS= read -r -d '' path; do
-	staged+=("$path")
+	web_staged+=("$path")
 done < <(git diff --cached --name-only --diff-filter=ACMR -z -- pablo-web/)
 
-if [[ ${#staged[@]} -eq 0 ]]; then
-	exit 0
-fi
+if [[ ${#web_staged[@]} -gt 0 ]]; then
+	rel_paths=()
+	for path in "${web_staged[@]}"; do
+		rel_paths+=("${path#pablo-web/}")
+	done
 
-rel_paths=()
-for path in "${staged[@]}"; do
-	rel_paths+=("${path#pablo-web/}")
-done
+	set +e
+	output="$(
+		cd pablo-web
+		bunx biome check --write -- "${rel_paths[@]}" 2>&1
+	)"
+	status=$?
+	set -e
 
-set +e
-output="$(
-	cd pablo-web
-	bunx biome check --write -- "${rel_paths[@]}" 2>&1
-)"
-status=$?
-set -e
-
-if [[ $status -ne 0 ]]; then
-	# Staged paths may all be outside biome.json includes (e.g. AGENTS.md)
-	if [[ "$output" == *"No files were processed"* ]]; then
-		exit 0
+	if [[ $status -ne 0 ]]; then
+		# Staged paths may all be outside biome.json includes (e.g. AGENTS.md)
+		if [[ "$output" != *"No files were processed"* ]]; then
+			printf '%s\n' "$output"
+			exit "$status"
+		fi
+	else
+		printf '%s\n' "$output"
+		git add -- "${web_staged[@]}"
 	fi
-	printf '%s\n' "$output"
-	exit "$status"
 fi
 
-printf '%s\n' "$output"
-git add -- "${staged[@]}"
+# --- Backend: dotnet format when staged files live under pablo/ ---
+backend_staged=()
+while IFS= read -r -d '' path; do
+	backend_staged+=("$path")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- pablo/)
+
+if [[ ${#backend_staged[@]} -gt 0 ]]; then
+	include_paths=()
+	for path in "${backend_staged[@]}"; do
+		include_paths+=("$path")
+	done
+
+	dotnet format pablo/pablo.slnx --include "${include_paths[@]}"
+	git add -- "${backend_staged[@]}"
+fi

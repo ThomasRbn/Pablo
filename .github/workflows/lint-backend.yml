@@ -24,5 +24,8 @@ jobs:
       - name: Restore
         run: dotnet restore pablo/pablo.slnx
 
+      - name: Build
+        run: dotnet build pablo/pablo.slnx --no-restore
+
       - name: Check format
         run: dotnet format pablo/pablo.slnx --verify-no-changes

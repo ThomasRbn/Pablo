@@ -2,7 +2,7 @@ SOLUTION := pablo/pablo.slnx
 API_PROJECT := pablo/src/Pablo.API
 WEB_DIR := pablo-web
 
-.PHONY: install-hooks restore build run watch test format clean
+.PHONY: install-hooks restore build run watch test test-backend format clean
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -21,7 +21,9 @@ run:
 watch:
 	dotnet watch run --project $(API_PROJECT)
 
-test:
+test: test-backend
+
+test-backend:
 	dotnet test $(SOLUTION)
 
 format:

@@ -1,2 +1,8 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Pablo.API/Pablo.API.csproj" />
+    <Project Path="src/Pablo.Application/Pablo.Application.csproj" />
+    <Project Path="src/Pablo.Domain/Pablo.Domain.csproj" />
+    <Project Path="src/Pablo.Infrastructure/Pablo.Infrastructure.csproj" />
+  </Folder>
 </Solution>

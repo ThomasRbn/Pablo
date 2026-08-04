@@ -1,7 +1,7 @@
 SOLUTION := pablo/pablo.slnx
 API_PROJECT := pablo/src/Pablo.API
 
-.PHONY: install-hooks restore build run test clean
+.PHONY: install-hooks restore build run watch test clean
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -16,6 +16,9 @@ build:
 
 run:
 	dotnet run --project $(API_PROJECT)
+
+watch:
+	dotnet watch run --project $(API_PROJECT)
 
 test:
 	dotnet test $(SOLUTION)

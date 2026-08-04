@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint
+    name: Lint Frontend
     runs-on: ubuntu-latest
     defaults:
       run:

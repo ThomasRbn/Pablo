@@ -1,10 +1,10 @@
-name: Lint
+name: Lint Frontend
 
 on:
   push:
 
 concurrency:
-  group: lint-${{ github.workflow }}-${{ github.ref }}
+  group: lint-frontend-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

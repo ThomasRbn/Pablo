@@ -2,10 +2,11 @@ name: opencode-review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 jobs:
   review:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-ai') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write

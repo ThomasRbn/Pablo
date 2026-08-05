@@ -1,3 +1,5 @@
+using Pablo.Infrastructure;
+
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -14,6 +16,7 @@ try
         .Enrich.FromLogContext()
         .WriteTo.Console());
 
+    builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
     builder.Services.AddHealthChecks();

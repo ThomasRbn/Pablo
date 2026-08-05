@@ -1,8 +1,9 @@
 SOLUTION := pablo/pablo.slnx
 API_PROJECT := pablo/src/Pablo.API
 WEB_DIR := pablo-web
+COMPOSE := docker compose -f docker/docker-compose.yml
 
-.PHONY: install-hooks restore build run watch test test-backend format clean
+.PHONY: install-hooks restore build run watch test test-backend format clean db-up db-down db-logs
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -32,3 +33,12 @@ format:
 
 clean:
 	dotnet clean $(SOLUTION)
+
+db-up:
+	$(COMPOSE) up -d
+
+db-down:
+	$(COMPOSE) down
+
+db-logs:
+	$(COMPOSE) logs -f postgres

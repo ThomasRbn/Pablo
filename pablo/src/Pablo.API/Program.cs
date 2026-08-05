@@ -32,8 +32,6 @@ try
     {
         options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     });
-    app.UseAuthentication();
-    app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");
 

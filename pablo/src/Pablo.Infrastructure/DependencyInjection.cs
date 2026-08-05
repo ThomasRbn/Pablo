@@ -14,11 +14,20 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "Connection string 'Default' is missing or empty. Set ConnectionStrings:Default in appsettings or environment.");
+        }
+
         services.AddDbContext<PabloDbContext>(options =>
             options.UseNpgsql(
-                configuration.GetConnectionString("Default"),
+                connectionString,
                 npgsql => npgsql.SetPostgresVersion(18, 0)));
 
+        // Identity stores only — no authentication scheme yet. Wire AddAuthentication
+        // (e.g. JWT) and UseAuthentication/UseAuthorization when auth is implemented.
         services
             .AddIdentityCore<AuthenticationUser>(options =>
             {
@@ -27,9 +36,6 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<PabloDbContext>()
             .AddDefaultTokenProviders();
-
-        services.AddAuthentication();
-        services.AddAuthorization();
 
         return services;
     }

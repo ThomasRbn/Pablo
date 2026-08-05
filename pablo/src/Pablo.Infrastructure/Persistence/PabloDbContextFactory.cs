@@ -24,9 +24,12 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException(
-                "Connection string 'Default' not found. Set ConnectionStrings:Default in appsettings or environment.");
+        var connectionString = configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "Connection string 'Default' is missing or empty. Set ConnectionStrings:Default in appsettings or environment.");
+        }
 
         var optionsBuilder = new DbContextOptionsBuilder<PabloDbContext>();
         optionsBuilder.UseNpgsql(

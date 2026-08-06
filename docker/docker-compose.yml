@@ -8,6 +8,7 @@ services:
       POSTGRES_PASSWORD: pablo
       POSTGRES_DB: pablo
     volumes:
+      # PG 18+ stores data under /var/lib/postgresql/$PG_MAJOR/docker; mount the parent.
       - pablo_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pablo -d pablo"]

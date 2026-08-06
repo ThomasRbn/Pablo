@@ -26,6 +26,9 @@ public static class DependencyInjection
                 connectionString,
                 npgsql => npgsql.SetPostgresVersion(18, 0)));
 
+        services.AddHealthChecks()
+            .AddDbContextCheck<PabloDbContext>();
+
         // Identity stores only — no authentication scheme yet. Wire AddAuthentication
         // (e.g. JWT) and UseAuthentication/UseAuthorization when auth is implemented.
         services

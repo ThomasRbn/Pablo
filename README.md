@@ -12,17 +12,21 @@ Deploy, run, and scale your apps without lock-in. Pablo is built in the open —
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
-| API | .NET (Clean Architecture) |
-| Web | React + Vite + Astryx |
-| Database | PostgreSQL |
+
+| Layer    | Tech                      |
+| -------- | ------------------------- |
+| API      | .NET (Clean Architecture) |
+| Web      | React + Vite + Astryx     |
+| Database | PostgreSQL                |
+
 
 ```
 pablo/          Backend (.NET)
 pablo-web/      Frontend (React)
 docker/         Local Postgres
 ```
+
+
 
 ## Quick start
 
@@ -40,13 +44,17 @@ make restore && make run
 cd pablo-web && bun install && bun run dev
 ```
 
-| Command | What it does |
-|---------|----------------|
-| `make build` | Build the .NET solution |
-| `make watch` | Run API with hot reload |
-| `make test` | Run backend tests |
-| `make format` | Format backend + frontend |
-| `make db-up` / `make db-down` | Start / stop Postgres |
+
+| Command                       | What it does              |
+| ----------------------------- | ------------------------- |
+| `make build`                  | Build the .NET solution   |
+| `make watch`                  | Run API with hot reload   |
+| `make test`                   | Run backend tests         |
+| `make format`                 | Format backend + frontend |
+| `make db-up` / `make db-down` | Start / stop Postgres     |
+
+
+
 
 ## Status
 
@@ -55,3 +63,4 @@ Pablo is early and under active development. Star the repo and watch for release
 ## License
 
 Free and open source. See the repository license for details.
+

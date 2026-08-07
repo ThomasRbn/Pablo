@@ -7,17 +7,20 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
 {
     public PabloDbContext CreateDbContext(string[] args)
     {
-        var connectionFromArgs = TryGetConnectionArg(args);
+        var connectionString = TryGetConnectionArg(args);
 
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(ResolveContentRoot())
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
-            .AddEnvironmentVariables()
-            .Build();
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(ResolveContentRoot())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.Development.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
 
-        var connectionString = connectionFromArgs
-            ?? configuration.GetConnectionString("Default");
+            connectionString = configuration.GetConnectionString("Default");
+        }
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
@@ -25,21 +28,21 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
         }
 
         var optionsBuilder = new DbContextOptionsBuilder<PabloDbContext>();
-        optionsBuilder.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.SetPostgresVersion(18, 0));
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new PabloDbContext(optionsBuilder.Options);
     }
 
     private static string? TryGetConnectionArg(string[] args)
     {
-        for (var i = 0; i < args.Length - 1; i++)
+        for (var i = 0; i < args.Length; i++)
         {
-            if (args[i] is "--connection")
+            if (args[i] is not "--connection")
             {
-                return args[i + 1];
+                continue;
             }
+
+            return i + 1 < args.Length ? args[i + 1] : null;
         }
 
         return null;
@@ -51,13 +54,23 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
              dir is not null;
              dir = dir.Parent)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "appsettings.json")))
+            foreach (var relative in new[]
+                     {
+                         ".",
+                         "Pablo.API",
+                         Path.Combine("src", "Pablo.API"),
+                         Path.Combine("pablo", "src", "Pablo.API"),
+                     })
             {
-                return dir.FullName;
+                var candidate = Path.GetFullPath(Path.Combine(dir.FullName, relative));
+                if (File.Exists(Path.Combine(candidate, "appsettings.json")))
+                {
+                    return candidate;
+                }
             }
         }
 
         throw new InvalidOperationException(
-            "Could not locate appsettings.json for design-time configuration. Run from the Pablo.API project directory or pass --connection.");
+            "Could not locate Pablo.API appsettings.json for design-time configuration. Run from the repo or pass --connection.");
     }
 }

@@ -20,9 +20,7 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<PabloDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsql => npgsql.SetPostgresVersion(18, 0)));
+            options.UseNpgsql(connectionString));
 
         services.AddHealthChecks()
             .AddDbContextCheck<PabloDbContext>();

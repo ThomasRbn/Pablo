@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Pablo.Infrastructure.Persistence.Migrations
+namespace Pablo.API.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class InitialIdentity : Migration

@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Pablo.Infrastructure.Persistence;
+using Pablo.API.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Pablo.Infrastructure.Persistence.Migrations
+namespace Pablo.API.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PabloDbContext))]
-    [Migration("20260805192824_InitialIdentity")]
-    partial class InitialIdentity
+    partial class PabloDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -157,7 +154,7 @@ namespace Pablo.Infrastructure.Persistence.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Pablo.Infrastructure.Identity.AuthenticationUser", b =>
+            modelBuilder.Entity("Pablo.API.Infrastructure.Identity.AuthenticationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -232,7 +229,7 @@ namespace Pablo.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Pablo.Infrastructure.Identity.AuthenticationUser", null)
+                    b.HasOne("Pablo.API.Infrastructure.Identity.AuthenticationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -241,7 +238,7 @@ namespace Pablo.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Pablo.Infrastructure.Identity.AuthenticationUser", null)
+                    b.HasOne("Pablo.API.Infrastructure.Identity.AuthenticationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -256,7 +253,7 @@ namespace Pablo.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Pablo.Infrastructure.Identity.AuthenticationUser", null)
+                    b.HasOne("Pablo.API.Infrastructure.Identity.AuthenticationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -265,7 +262,7 @@ namespace Pablo.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Pablo.Infrastructure.Identity.AuthenticationUser", null)
+                    b.HasOne("Pablo.API.Infrastructure.Identity.AuthenticationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

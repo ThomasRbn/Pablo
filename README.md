@@ -15,7 +15,7 @@ Deploy, run, and scale your apps without lock-in. Pablo is built in the open —
 
 | Layer    | Tech                      |
 | -------- | ------------------------- |
-| API      | .NET (Clean Architecture) |
+| API      | .NET (single API project, feature folders) |
 | Web      | React + Vite + Astryx     |
 | Database | PostgreSQL                |
 

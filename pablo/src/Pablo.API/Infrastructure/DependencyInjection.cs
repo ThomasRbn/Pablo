@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
-using Pablo.Infrastructure.Identity;
-using Pablo.Infrastructure.Persistence;
+using Pablo.API.Infrastructure.Identity;
+using Pablo.API.Infrastructure.Persistence;
 
-namespace Pablo.Infrastructure;
+namespace Pablo.API.Infrastructure;
 
 public static class DependencyInjection
 {
@@ -22,9 +20,7 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<PabloDbContext>(options =>
-            options.UseNpgsql(
-                connectionString,
-                npgsql => npgsql.SetPostgresVersion(18, 0)));
+            options.UseNpgsql(connectionString));
 
         services.AddHealthChecks()
             .AddDbContextCheck<PabloDbContext>();

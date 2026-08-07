@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-using Pablo.Infrastructure.Identity;
+using Pablo.API.Infrastructure.Identity;
 
-namespace Pablo.Infrastructure.Persistence;
+namespace Pablo.API.Infrastructure.Persistence;
 
 public class PabloDbContext(DbContextOptions<PabloDbContext> options)
     : IdentityDbContext<AuthenticationUser>(options)

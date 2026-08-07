@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Pablo.Infrastructure.Identity;
+namespace Pablo.API.Infrastructure.Identity;
 
 public class AuthenticationUser : IdentityUser
 {

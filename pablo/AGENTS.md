@@ -6,84 +6,68 @@ Frontend (React / Astryx) rules live in `pablo-web/AGENTS.md`.
 
 ## Architecture
 
-Clean Architecture under `pablo/`. Four projects in `pablo.slnx`; dependencies point **inward only**.
+Single API project under `pablo/`. Features are vertical slices in `Features/{Name}/`; shared EF/Identity lives in `Infrastructure/`.
 
 ```
-Pablo.Domain          → (none)
-Pablo.Application     → Domain
-Pablo.Infrastructure  → Application
-Pablo.API             → Application + Infrastructure
+Pablo.API   (only project in pablo.slnx)
 ```
 
 ```mermaid
 flowchart TB
   API[Pablo.API]
-  App[Pablo.Application]
-  Infra[Pablo.Infrastructure]
-  Domain[Pablo.Domain]
-
-  API --> App
+  Features[Features per slice]
+  Infra[Infrastructure shared]
+  API --> Features
   API --> Infra
-  Infra --> App
-  App --> Domain
 ```
 
-| Project | Role |
-|---------|------|
-| `src/Pablo.Domain` | Entities, value objects, domain events, repository/port interfaces |
-| `src/Pablo.Application` | Application services / use cases, DTOs, validators, application interfaces |
-| `src/Pablo.Infrastructure` | EF/DbContext, repository implementations, external clients |
-| `src/Pablo.API` | Controllers, middleware, `Program.cs` DI composition root |
-| `tests/` | Reserved for `Pablo.*.Tests` (none yet) |
+| Location | Role |
+|----------|------|
+| `src/Pablo.API` | Host, HTTP surface, features, shared infrastructure |
+| `src/Pablo.API/Features/{Name}/` | One subfolder per feature (controllers, services, DTOs, validators) |
+| `src/Pablo.API/Infrastructure/` | DbContext, migrations, Identity, external clients, `AddInfrastructure` |
+| `tests/` | Reserved for `Pablo.API.Tests` (none yet) |
 
-**Not CQRS yet.** Use plain application services. Do not add MediatR, Commands, Queries, or Handlers unless asked. CQRS may come later.
+**Not CQRS yet.** Use plain feature services. Do not add MediatR, Commands, Queries, or Handlers unless asked. CQRS may come later.
 
 ## Dependency rules (hard)
 
-- Depend inward only. Never add a ProjectReference that points outward.
-- Domain: no persistence, HTTP, or framework packages for infrastructure concerns.
-- API may reference Infrastructure **only** for DI registration (e.g. `AddInfrastructure`).
-- Controllers call Application services — never Infrastructure types directly.
-- No business rules in API or Infrastructure.
+- Keep a **single** class library/project: `Pablo.API`. Do not add Domain / Application / Infrastructure projects unless asked.
+- Feature code goes under `Features/{Name}/`. Shared persistence and Identity go under `Infrastructure/`.
+- Controllers call feature services — keep business rules out of controllers.
+- Namespaces match folders (`Pablo.API.Features.{Name}.*`, `Pablo.API.Infrastructure.*`).
 
 ## What file goes where
 
-### Domain — by type
+### Features — by feature
 
 ```
-Pablo.Domain/
-  Entities/
-  ValueObjects/
-  Enums/
-  Interfaces/          # ports, e.g. IUserRepository
-```
-
-### Application — by feature
-
-```
-Pablo.Application/
-  Features/{Name}/     # services, DTOs, validators for that feature
-  DependencyInjection.cs   # AddApplication()
+Pablo.API/
+  Features/{Name}/
+    {Name}Controller.cs    # or endpoints
+    {Name}Service.cs       # application logic for the feature
+    # DTOs, validators as needed
 ```
 
 No `Commands/`, `Queries/`, or `Handlers/` folders until CQRS is introduced.
 
-### Infrastructure — by technical concern
-
-```
-Pablo.Infrastructure/
-  Persistence/         # DbContext, entity configs, repository implementations
-  External/            # third-party API clients, email, storage, etc.
-  DependencyInjection.cs   # AddInfrastructure(IConfiguration)
-```
-
-### API — host and HTTP surface
+### Infrastructure — shared technical concerns
 
 ```
 Pablo.API/
-  Controllers/
-  Middleware/          # when needed
-  Program.cs           # composition root: AddApplication + AddInfrastructure
+  Infrastructure/
+    Persistence/           # DbContext, entity configs, migrations
+    Identity/              # Identity user types
+    External/              # third-party API clients, email, storage (when needed)
+    DependencyInjection.cs # AddInfrastructure(IConfiguration)
+```
+
+### Host and HTTP surface
+
+```
+Pablo.API/
+  Middleware/              # when needed
+  Program.cs               # composition root: AddInfrastructure (+ feature DI)
   appsettings.json
   appsettings.Development.json
 ```
@@ -91,18 +75,15 @@ Pablo.API/
 ### Tests (when added)
 
 ```
-pablo/tests/Pablo.Domain.Tests/
-pablo/tests/Pablo.Application.Tests/
-pablo/tests/Pablo.API.Tests/       # integration, if needed
+pablo/tests/Pablo.API.Tests/
 ```
 
 ## Workflow for a new feature
 
-1. Domain — entities / value objects / port interfaces
-2. Application — feature service + DTOs (+ validators when used)
-3. Infrastructure — implement ports (repos, external clients)
-4. API — controller that depends on Application services only
-5. Register in `AddApplication()` / `AddInfrastructure()` and call both from `Program.cs`
+1. Create `Features/{Name}/` with service + DTOs (+ validators when used)
+2. Add controller/endpoints that depend on the feature service
+3. Add entities/configs/migrations under `Infrastructure/` when persistence is required
+4. Register feature services in DI (feature extension and/or `AddInfrastructure`) and call from `Program.cs`
 
 ## Tooling
 
@@ -117,8 +98,9 @@ Follow `.editorconfig`: PascalCase types, `I` + PascalCase interfaces, `_camelCa
 
 ## Self-check before finishing
 
-- [ ] ProjectReferences still point inward only
-- [ ] No EF / HTTP / Infrastructure types in Domain
-- [ ] Controllers have no business logic and do not touch Infrastructure
-- [ ] New types live in the folders above; namespaces match folders
+- [ ] Only `Pablo.API` is in the solution (no extra class libraries unless asked)
+- [ ] New feature code lives under `Features/{Name}/`
+- [ ] Shared EF / Identity / external clients live under `Infrastructure/`
+- [ ] Controllers have no business logic
+- [ ] Namespaces match folders
 - [ ] No CQRS / MediatR scaffolding unless explicitly requested

@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 
-namespace Pablo.Infrastructure.Persistence;
+namespace Pablo.API.Infrastructure.Persistence;
 
 public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbContext>
 {
@@ -11,7 +10,7 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
         var connectionFromArgs = TryGetConnectionArg(args);
 
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(ResolveApiContentRoot())
+            .SetBasePath(ResolveContentRoot())
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
             .AddEnvironmentVariables()
@@ -46,28 +45,19 @@ public sealed class PabloDbContextFactory : IDesignTimeDbContextFactory<PabloDbC
         return null;
     }
 
-    private static string ResolveApiContentRoot()
+    private static string ResolveContentRoot()
     {
         for (var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
              dir is not null;
              dir = dir.Parent)
         {
-            foreach (var relative in new[]
-                     {
-                         "Pablo.API",
-                         Path.Combine("src", "Pablo.API"),
-                         Path.Combine("pablo", "src", "Pablo.API"),
-                     })
+            if (File.Exists(Path.Combine(dir.FullName, "appsettings.json")))
             {
-                var candidate = Path.Combine(dir.FullName, relative);
-                if (File.Exists(Path.Combine(candidate, "appsettings.json")))
-                {
-                    return candidate;
-                }
+                return dir.FullName;
             }
         }
 
         throw new InvalidOperationException(
-            "Could not locate Pablo.API for design-time configuration. Run from the repo or pass --connection.");
+            "Could not locate appsettings.json for design-time configuration. Run from the Pablo.API project directory or pass --connection.");
     }
 }

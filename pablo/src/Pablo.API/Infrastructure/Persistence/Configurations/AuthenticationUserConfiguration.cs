@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Pablo.Infrastructure.Identity;
+using Pablo.API.Infrastructure.Identity;
 
-namespace Pablo.Infrastructure.Persistence.Configurations;
+namespace Pablo.API.Infrastructure.Persistence.Configurations;
 
 public sealed class AuthenticationUserConfiguration : IEntityTypeConfiguration<AuthenticationUser>
 {

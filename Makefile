@@ -4,7 +4,7 @@ WEB_DIR := pablo-web
 COMPOSE := docker compose -f docker/docker-compose.yml
 EF := dotnet ef --project $(API_PROJECT)
 
-.PHONY: install-hooks restore build run watch test test-backend format clean db-up db-down db-logs db-migrate db-reset
+.PHONY: install-hooks restore build run watch test test-backend format clean db-up db-down db-logs db-migrate db-reset openapi-check
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -47,9 +47,14 @@ db-logs:
 db-migrate:
 	$(EF) database update
 
-# Drop Postgres volume, recreate, apply migrations. Root user (root/root) is seeded on next API start.
+# Drop Postgres volume, recreate, apply migrations. Root user (root/root) is seeded on next Development API start.
 db-reset:
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --wait
 	$(EF) database update
-	@echo "Database reset. Start the API (make run) to seed the root user (username/password: root/root)."
+	@echo "Database reset. Start the API with ASPNETCORE_ENVIRONMENT=Development (make run) to seed root/root."
+
+# Requires a running API on localhost:8000 (Development). Fails if committed OpenAPI/client drifts.
+openapi-check:
+	cd $(WEB_DIR) && bun run api:fetch-openapi && bun run api:generate
+	git diff --exit-code -- $(WEB_DIR)/openapi/openapi.json $(WEB_DIR)/src/api/generated

@@ -1,4 +1,4 @@
-import { getAccessToken } from "#/auth/storage";
+import { clearSession, getAccessToken } from "#/auth/storage";
 
 export type ProblemDetails = {
 	type?: string;
@@ -21,6 +21,24 @@ export class ApiError extends Error {
 	}
 }
 
+function resolveUrl(url: string): string {
+	const baseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+	if (!baseUrl) {
+		return url;
+	}
+	return `${baseUrl.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+function redirectToLoginOnUnauthorized(): void {
+	if (typeof window === "undefined") {
+		return;
+	}
+	if (window.location.pathname === "/login") {
+		return;
+	}
+	window.location.assign("/login");
+}
+
 export const customFetch = async <T>(
 	url: string,
 	options: RequestInit,
@@ -35,7 +53,7 @@ export const customFetch = async <T>(
 		headers.set("Authorization", `Bearer ${token}`);
 	}
 
-	const response = await fetch(url, {
+	const response = await fetch(resolveUrl(url), {
 		...options,
 		headers,
 	});
@@ -55,6 +73,12 @@ export const customFetch = async <T>(
 	}
 
 	if (!response.ok) {
+		// Only clear on 401 when we sent a bearer token — failed logins are also 401.
+		if (response.status === 401 && token) {
+			clearSession();
+			redirectToLoginOnUnauthorized();
+		}
+
 		const problem =
 			data && typeof data === "object" ? (data as ProblemDetails) : null;
 		const message =

@@ -51,12 +51,8 @@ function Home() {
 			<section className="flex flex-col gap-3">
 				<h2 className="text-xl font-semibold">Status</h2>
 				<div className="flex flex-wrap items-center gap-2">
-					<Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
-						Active
-					</Badge>
-					<Badge className="bg-amber-400 text-foreground hover:bg-amber-400">
-						Pending
-					</Badge>
+					<Badge variant="success">Active</Badge>
+					<Badge variant="warning">Pending</Badge>
 					<Badge variant="destructive">Failed</Badge>
 					<Badge variant="secondary">In review</Badge>
 					<Badge variant="outline">Draft</Badge>

@@ -49,10 +49,9 @@ try
 
     var app = builder.Build();
 
-    await DatabaseSeeder.SeedAsync(app.Services);
-
     if (app.Environment.IsDevelopment())
     {
+        await DatabaseSeeder.SeedAsync(app.Services);
         app.MapOpenApi();
     }
 

@@ -8,6 +8,10 @@ const THEME_KEY = "theme";
 type Theme = "light" | "dark";
 
 function readTheme(): Theme {
+	if (typeof window === "undefined" || typeof localStorage === "undefined") {
+		return "light";
+	}
+
 	const stored = localStorage.getItem(THEME_KEY);
 	if (stored === "light" || stored === "dark") {
 		return stored;
@@ -18,6 +22,10 @@ function readTheme(): Theme {
 }
 
 function applyTheme(theme: Theme) {
+	if (typeof document === "undefined" || typeof localStorage === "undefined") {
+		return;
+	}
+
 	document.documentElement.classList.toggle("dark", theme === "dark");
 	localStorage.setItem(THEME_KEY, theme);
 }

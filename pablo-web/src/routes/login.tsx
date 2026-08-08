@@ -90,7 +90,7 @@ function LoginPage() {
 									<Input
 										id="username"
 										type="text"
-										autoComplete="username"
+										autoComplete="username email"
 										placeholder="root or you@example.com"
 										value={username}
 										onChange={(e) => setUsername(e.target.value)}

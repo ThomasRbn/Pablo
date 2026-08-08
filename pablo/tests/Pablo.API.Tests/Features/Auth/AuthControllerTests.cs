@@ -81,9 +81,11 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     }
 
     [Fact]
-    public async Task Post_login_returns_ok_for_seeded_root_user()
+    public async Task SeedAsync_creates_root_user_when_database_is_empty()
     {
-        var client = factory.CreateClient();
+        using var freshFactory = new PabloApiFactory();
+        await DatabaseSeeder.SeedAsync(freshFactory.Services);
+        var client = freshFactory.CreateClient();
 
         var loginRequest = new LoginRequest(
             Username: DatabaseSeeder.RootUsername,
@@ -96,6 +98,32 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         Assert.Equal(DatabaseSeeder.RootUsername, loginResponseBody.Username);
         Assert.Equal(DatabaseSeeder.RootEmail, loginResponseBody.Email);
         Assert.Equal(DatabaseSeeder.RootDisplayName, loginResponseBody.DisplayName);
+    }
+
+    [Fact]
+    public async Task Post_login_with_email_ignores_username_that_matches_email()
+    {
+        var client = factory.CreateClient();
+        var email = $"victim-{Guid.NewGuid():N}@example.com";
+        const string victimPassword = "VictimPass1!";
+        const string squatterPassword = "SquatterPass1!";
+        await SeedUserAsync($"victim-{Guid.NewGuid():N}", email, victimPassword, "Victim");
+        await SeedUserAsync(email, $"squatter-{Guid.NewGuid():N}@evil.example", squatterPassword, "Squatter");
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(Username: email, Password: victimPassword));
+        var loginResponseBody = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.NotNull(loginResponseBody);
+        Assert.Equal(email, loginResponseBody.Email);
+        Assert.Equal("Victim", loginResponseBody.DisplayName);
+
+        var squatterLogin = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(Username: email, Password: squatterPassword));
+        Assert.Equal(HttpStatusCode.Unauthorized, squatterLogin.StatusCode);
     }
 
     [Fact]

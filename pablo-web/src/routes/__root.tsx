@@ -2,6 +2,7 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
 import { AuthProvider } from "#/auth/AuthProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const Devtools = import.meta.env.DEV
 	? lazy(() =>
@@ -32,13 +33,15 @@ export const Route = createRootRoute({
 
 function RootComponent() {
 	return (
-		<AuthProvider>
-			<Outlet />
-			{Devtools ? (
-				<Suspense>
-					<Devtools />
-				</Suspense>
-			) : null}
-		</AuthProvider>
+		<TooltipProvider>
+			<AuthProvider>
+				<Outlet />
+				{Devtools ? (
+					<Suspense>
+						<Devtools />
+					</Suspense>
+				) : null}
+			</AuthProvider>
+		</TooltipProvider>
 	);
 }

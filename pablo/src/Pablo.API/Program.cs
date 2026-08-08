@@ -1,23 +1,28 @@
 using Pablo.API.Exceptions;
+using Pablo.API.Features.Auth.Services;
 using Pablo.API.Infrastructure;
 
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .CreateBootstrapLogger();
+    .CreateLogger();
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    // preserveStaticLogger: WebApplicationFactory builds multiple hosts in one process;
+    // CreateBootstrapLogger + freeze would throw "The logger is already frozen."
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
-        .WriteTo.Console());
+        .WriteTo.Console(),
+        preserveStaticLogger: true);
 
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddProblemDetails(options =>
     {
         options.CustomizeProblemDetails = context =>
@@ -36,7 +41,14 @@ try
             }
         };
     });
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .ConfigureApiBehaviorOptions(options =>
+        {
+            // Let feature services own required-field validation (e.g. InvalidLoginRequestException).
+            // Otherwise [ApiController] returns a generic 400 before the action runs when JSON
+            // sends null for non-nullable strings.
+            options.SuppressModelStateInvalidFilter = true;
+        });
     builder.Services.AddOpenApi();
 
     var app = builder.Build();

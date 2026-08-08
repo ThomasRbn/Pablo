@@ -1,4 +1,4 @@
-namespace Pablo.API.Features.Auth.Types;
+namespace Pablo.API.Features.Auth;
 
-public record SignupRequest(string Email, string Password, string DisplayName);
-public record SignupResponse(string Id, string Email, string DisplayName);
+public record LoginRequest(string Email, string Password);
+public record LoginResponse(string Id, string Email, string DisplayName);

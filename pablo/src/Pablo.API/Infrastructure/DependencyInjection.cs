@@ -25,6 +25,9 @@ public static class DependencyInjection
         services.AddHealthChecks()
             .AddDbContextCheck<PabloDbContext>();
 
+        // Required by Identity token providers (AddDefaultTokenProviders).
+        services.AddDataProtection();
+
         // Identity stores only — no authentication scheme yet. Wire AddAuthentication
         // (e.g. JWT) and UseAuthentication/UseAuthorization when auth is implemented.
         services

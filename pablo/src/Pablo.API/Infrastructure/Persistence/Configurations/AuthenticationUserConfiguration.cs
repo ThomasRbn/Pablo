@@ -10,5 +10,9 @@ public sealed class AuthenticationUserConfiguration : IEntityTypeConfiguration<A
     public void Configure(EntityTypeBuilder<AuthenticationUser> builder)
     {
         builder.ToTable("Users");
+
+        builder.Property(user => user.DisplayName)
+            .HasMaxLength(256)
+            .IsRequired();
     }
 }

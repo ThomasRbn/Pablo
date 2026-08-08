@@ -2,35 +2,35 @@ using Pablo.API.Exceptions;
 
 namespace Pablo.API.Features.Auth;
 
-public sealed class InvalidSignupRequestException : Exception, IProblemDetailsException
+public sealed class InvalidLoginRequestException : Exception, IProblemDetailsException
 {
     public const string DetailMessage = "One or more validation errors occurred.";
 
     public int StatusCode => StatusCodes.Status400BadRequest;
-    public string Title => "Invalid signup request";
+    public string Title => "Invalid login request";
     public string Detail => DetailMessage;
     public IReadOnlyDictionary<string, string[]> Errors { get; }
 
-    public InvalidSignupRequestException(IReadOnlyDictionary<string, string[]> errors)
+    public InvalidLoginRequestException(IReadOnlyDictionary<string, string[]> errors)
         : base(DetailMessage)
     {
         ArgumentNullException.ThrowIfNull(errors);
         Errors = errors;
     }
 
-    public static InvalidSignupRequestException For(string field, string message)
+    public static InvalidLoginRequestException For(string field, string message)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(field);
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
 
-        return new InvalidSignupRequestException(
+        return new InvalidLoginRequestException(
             new Dictionary<string, string[]>(StringComparer.Ordinal)
             {
                 [field] = [message],
             });
     }
 
-    public static InvalidSignupRequestException MissingRequired(params string[] fields)
+    public static InvalidLoginRequestException MissingRequired(params string[] fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
         if (fields.Length == 0)
@@ -43,7 +43,7 @@ public sealed class InvalidSignupRequestException : Exception, IProblemDetailsEx
             field => new[] { Required(field) },
             StringComparer.Ordinal);
 
-        return new InvalidSignupRequestException(errors);
+        return new InvalidLoginRequestException(errors);
     }
 
     public static string Required(string field) => $"The {field} field is required.";
@@ -51,14 +51,4 @@ public sealed class InvalidSignupRequestException : Exception, IProblemDetailsEx
     public static string Whitespace(string field) => $"The {field} field must not be whitespace.";
 
     public static string InvalidEmail() => "The Email field is not a valid email address.";
-
-    public static string PasswordTooShort() => "Password must be at least 8 characters.";
-
-    public static string PasswordMissingUppercase() => "Password must contain an uppercase letter.";
-
-    public static string PasswordMissingLowercase() => "Password must contain a lowercase letter.";
-
-    public static string PasswordMissingSymbol() => "Password must contain a symbol.";
-
-    public static string PasswordMissingDigit() => "Password must contain a digit.";
 }

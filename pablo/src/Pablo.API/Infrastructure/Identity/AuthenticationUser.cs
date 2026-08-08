@@ -4,4 +4,5 @@ namespace Pablo.API.Infrastructure.Identity;
 
 public class AuthenticationUser : IdentityUser
 {
+    public string DisplayName { get; set; } = string.Empty;
 }

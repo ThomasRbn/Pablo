@@ -2,10 +2,12 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 using Pablo.API.Features.Auth;
-using Pablo.API.Features.Auth.Types;
+using Pablo.API.Infrastructure.Identity;
 
 namespace Pablo.API.Tests.Features.Auth;
 
@@ -13,70 +15,74 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
 {
     private const string ValidPassword = "Password1!";
 
-    public static TheoryData<string?, string?, string?, string, string> InvalidSignupCases => new()
+    public static TheoryData<string?, string?, string, string> InvalidLoginCases => new()
     {
         // Missing / empty
-        { "test@example.com", ValidPassword, "", "DisplayName", InvalidSignupRequestException.Required("DisplayName") },
-        { "test@example.com", "", "John Doe", "Password", InvalidSignupRequestException.Required("Password") },
-        { "", ValidPassword, "John Doe", "Email", InvalidSignupRequestException.Required("Email") },
-        { "test@example.com", ValidPassword, null, "DisplayName", InvalidSignupRequestException.Required("DisplayName") },
-        { "test@example.com", null, "John Doe", "Password", InvalidSignupRequestException.Required("Password") },
-        { null, ValidPassword, "John Doe", "Email", InvalidSignupRequestException.Required("Email") },
+        { "test@example.com", "", "Password", InvalidLoginRequestException.Required("Password") },
+        { "", ValidPassword, "Email", InvalidLoginRequestException.Required("Email") },
+        { "test@example.com", null, "Password", InvalidLoginRequestException.Required("Password") },
+        { null, ValidPassword, "Email", InvalidLoginRequestException.Required("Email") },
 
         // Whitespace
-        { "   ", ValidPassword, "John Doe", "Email", InvalidSignupRequestException.Whitespace("Email") },
-        { "test@example.com", "        ", "John Doe", "Password", InvalidSignupRequestException.Whitespace("Password") },
-        { "test@example.com", ValidPassword, "   ", "DisplayName", InvalidSignupRequestException.Whitespace("DisplayName") },
+        { "   ", ValidPassword, "Email", InvalidLoginRequestException.Whitespace("Email") },
+        { "test@example.com", "        ", "Password", InvalidLoginRequestException.Whitespace("Password") },
 
         // Invalid email format
-        { "not-an-email", ValidPassword, "John Doe", "Email", InvalidSignupRequestException.InvalidEmail() },
-        { "missing-domain@", ValidPassword, "John Doe", "Email", InvalidSignupRequestException.InvalidEmail() },
-        { "@example.com", ValidPassword, "John Doe", "Email", InvalidSignupRequestException.InvalidEmail() },
-
-        // Weak password (8+ chars, upper, lower, digit, symbol)
-        { "test@example.com", "Pass1!", "John Doe", "Password", InvalidSignupRequestException.PasswordTooShort() },
-        { "test@example.com", "password1!", "John Doe", "Password", InvalidSignupRequestException.PasswordMissingUppercase() },
-        { "test@example.com", "PASSWORD1!", "John Doe", "Password", InvalidSignupRequestException.PasswordMissingLowercase() },
-        { "test@example.com", "Password1", "John Doe", "Password", InvalidSignupRequestException.PasswordMissingSymbol() },
-        { "test@example.com", "Password!", "John Doe", "Password", InvalidSignupRequestException.PasswordMissingDigit() },
+        { "not-an-email", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
+        { "missing-domain@", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
+        { "@example.com", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
     };
 
     [Fact]
-    public async Task Post_signup_returns_ok()
+    public async Task Post_login_returns_ok()
     {
         var client = factory.CreateClient();
-        var signupRequest = new SignupRequest(Email: "test@example.com", Password: ValidPassword, DisplayName: "John Doe");
+        var email = $"ok-{Guid.NewGuid():N}@example.com";
+        const string displayName = "John Doe";
+        await SeedUserAsync(email, ValidPassword, displayName);
 
-        var signupResponse = await client.PostAsJsonAsync("/api/auth/signup", signupRequest);
-        var signupResponseBody = await signupResponse.Content.ReadFromJsonAsync<SignupResponse>();
+        var loginRequest = new LoginRequest(Email: email, Password: ValidPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginResponseBody = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 
-        Assert.Equal(HttpStatusCode.OK, signupResponse.StatusCode);
-        Assert.NotNull(signupResponseBody);
-        Assert.Equal(signupRequest.Email, signupResponseBody.Email);
-        Assert.Equal(signupRequest.DisplayName, signupResponseBody.DisplayName);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.NotNull(loginResponseBody);
+        Assert.Equal(email, loginResponseBody.Email);
+        Assert.Equal(displayName, loginResponseBody.DisplayName);
     }
 
     [Fact]
-    public async Task Post_signup_returns_error_when_email_duplicate()
+    public async Task Post_login_returns_unauthorized_when_password_is_wrong()
     {
         var client = factory.CreateClient();
+        var email = $"wrong-pw-{Guid.NewGuid():N}@example.com";
+        await SeedUserAsync(email, ValidPassword, "John Doe");
 
-        var signupRequest = new SignupRequest(Email: "test@example.com", Password: ValidPassword, DisplayName: "John Doe");
-        var signupRequestDuplicated = new SignupRequest(Email: "test@example.com", Password: "MyPassword1!", DisplayName: "Jane Doe");
+        var loginRequest = new LoginRequest(Email: email, Password: "WrongPassword1!");
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var problem = await loginResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+        var expected = new InvalidCredentialsException();
 
-        var signupResponse = await client.PostAsJsonAsync("/api/auth/signup", signupRequest);
-        var signupResponseBody = await signupResponse.Content.ReadFromJsonAsync<SignupResponse>();
+        Assert.Equal((HttpStatusCode)expected.StatusCode, loginResponse.StatusCode);
+        Assert.NotNull(problem);
+        Assert.Equal(expected.Detail, problem.Detail);
+        Assert.Equal(expected.Title, problem.Title);
+        Assert.Equal(expected.StatusCode, problem.Status);
+    }
 
-        Assert.Equal(HttpStatusCode.OK, signupResponse.StatusCode);
-        Assert.NotNull(signupResponseBody);
-        Assert.Equal(signupRequest.Email, signupResponseBody.Email);
-        Assert.Equal(signupRequest.DisplayName, signupResponseBody.DisplayName);
+    [Fact]
+    public async Task Post_login_returns_unauthorized_when_email_is_unknown()
+    {
+        var client = factory.CreateClient();
+        var loginRequest = new LoginRequest(
+            Email: $"unknown-{Guid.NewGuid():N}@example.com",
+            Password: ValidPassword);
 
-        var signupResponseDuplicated = await client.PostAsJsonAsync("/api/auth/signup", signupRequestDuplicated);
-        var problem = await signupResponseDuplicated.Content.ReadFromJsonAsync<ProblemDetails>();
-        var expected = new DuplicateEmailException();
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var problem = await loginResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+        var expected = new InvalidCredentialsException();
 
-        Assert.Equal((HttpStatusCode)expected.StatusCode, signupResponseDuplicated.StatusCode);
+        Assert.Equal((HttpStatusCode)expected.StatusCode, loginResponse.StatusCode);
         Assert.NotNull(problem);
         Assert.Equal(expected.Detail, problem.Detail);
         Assert.Equal(expected.Title, problem.Title);
@@ -84,22 +90,21 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     }
 
     [Theory]
-    [MemberData(nameof(InvalidSignupCases))]
-    public async Task Post_signup_returns_error_when_request_is_invalid(
+    [MemberData(nameof(InvalidLoginCases))]
+    public async Task Post_login_returns_error_when_request_is_invalid(
         string? email,
         string? password,
-        string? displayName,
         string expectedField,
         string expectedMessage)
     {
         var client = factory.CreateClient();
-        var signupRequest = new SignupRequest(Email: email!, Password: password!, DisplayName: displayName!);
+        var loginRequest = new LoginRequest(Email: email!, Password: password!);
 
-        var signupResponse = await client.PostAsJsonAsync("/api/auth/signup", signupRequest);
-        var problem = await signupResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>();
-        var expected = InvalidSignupRequestException.For(expectedField, expectedMessage);
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var problem = await loginResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        var expected = InvalidLoginRequestException.For(expectedField, expectedMessage);
 
-        Assert.Equal((HttpStatusCode)expected.StatusCode, signupResponse.StatusCode);
+        Assert.Equal((HttpStatusCode)expected.StatusCode, loginResponse.StatusCode);
         Assert.NotNull(problem);
         Assert.Equal(expected.Detail, problem.Detail);
         Assert.Equal(expected.Title, problem.Title);
@@ -112,13 +117,30 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     [InlineData("{")]
     [InlineData("{not json}")]
     [InlineData("null")]
-    public async Task Post_signup_returns_bad_request_when_body_is_malformed_or_empty(string body)
+    public async Task Post_login_returns_bad_request_when_body_is_malformed_or_empty(string body)
     {
         var client = factory.CreateClient();
         using var content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        var signupResponse = await client.PostAsync("/api/auth/signup", content);
+        var loginResponse = await client.PostAsync("/api/auth/login", content);
 
-        Assert.Equal(HttpStatusCode.BadRequest, signupResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, loginResponse.StatusCode);
+    }
+
+    private async Task SeedUserAsync(string email, string password, string displayName)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AuthenticationUser>>();
+
+        var result = await userManager.CreateAsync(
+            new AuthenticationUser
+            {
+                UserName = email,
+                Email = email,
+                DisplayName = displayName,
+            },
+            password);
+
+        Assert.True(result.Succeeded, string.Join("; ", result.Errors.Select(e => e.Description)));
     }
 }

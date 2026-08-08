@@ -3,11 +3,13 @@ import {
 	createFileRoute,
 	Link,
 	Outlet,
+	redirect,
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
 
 import { useAuth } from "#/auth/AuthProvider";
+import { readSession } from "#/auth/storage";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,11 @@ import {
 } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/_app")({
+	beforeLoad: () => {
+		if (!readSession()) {
+			throw redirect({ to: "/login" });
+		}
+	},
 	component: AppLayout,
 });
 
@@ -107,23 +114,19 @@ function AppLayout() {
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" side="top">
-										<DropdownMenuItem onClick={() => logout()}>
+										<DropdownMenuItem
+											onClick={() => {
+												logout();
+												void navigate({ to: "/login" });
+											}}
+										>
 											<SignOut />
 											Log out
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</div>
-						) : (
-							<SidebarMenuButton
-								className="group-data-[collapsible=icon]:hidden"
-								onClick={() => {
-									void navigate({ to: "/login" });
-								}}
-							>
-								<span>Log in</span>
-							</SidebarMenuButton>
-						)}
+						) : null}
 					</div>
 				</SidebarFooter>
 				<SidebarRail />

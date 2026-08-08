@@ -2,33 +2,28 @@
 
 Project-specific guidance for AI coding agents.
 
-<!-- ASTRYX:START -->
-Astryx v0.2.0 · 154 components
-CLI: run every command as `bunx astryx <cmd>` (shown below as `astryx ...`).
+<!-- SHADCN:START -->
+shadcn/ui (preset `b3kK6DGsq`, primary `#FF6900`)
 
-SETUP (once, in your app entry e.g. main.tsx) — without these, components render unstyled:
-  import "@astryxdesign/core/reset.css";
-  import "@astryxdesign/core/astryx.css";
+CLI: run every command as `bunx --bun shadcn@latest <cmd>` (shown below as `shadcn ...`).
+
+SETUP — global styles live in `src/styles.css` (Tailwind v4 + CSS variables). Wrap overlays that need tooltips with `TooltipProvider` in the root route.
 
 WORKFLOW — discover, don't guess. Before writing UI:
-1. `astryx build "<idea>"` — START HERE: returns a kit (closest [page] + [block]s + [component]s). No args = full playbook.
-2. `astryx template <name> [--skeleton]` — scaffold the [page]/[block]s it named, or study their layout. Templates are reference code.
-3. `astryx component <Name>` — props + examples for every component you use.
+1. `shadcn search @shadcn -q "<query>"` — find components in the registry.
+2. `shadcn add <component>` — add source under `src/components/ui/`.
+3. `shadcn docs <component>` — props and usage links for what you add.
 
 RULES:
-- No <div> — components do all layout/spacing. Full page → AppShell; sidebar nav → SideNav.
-- Frame first: pick the shell (AppShell / Layout+LayoutPanel) and budget regions in px BEFORE writing content (`astryx docs layout`).
-- Dense data = rows (Table, List/Item) edge-to-edge — never Card-wrapped list items. Card = dashboard widgets, galleries, settings groups only.
-- Status → StatusDot/Token; Badge only for counts and enumerated states, never decoration.
-- Custom styling: component props first; else Tailwind utilities backed by tokens (bg-surface, text-primary, rounded-lg) via tailwind-theme.css. No raw hex/px.
-- Tokens for every value (`astryx docs tokens`). Brand/accent via `astryx theme` — never override --color-* in :root.
-- SELF-CHECK before you finish: re-read the file and replace any style={{…}}, raw <div>/<span> layout, imported .css/@apply, or hardcoded/arbitrary value (e.g. bg-[#fff], p-[13px]) with the component or a token-backed utility. If unsure a component/prop exists, run `astryx component <Name>` / `astryx search "<thing>"`; don't hand-roll CSS.
+- Prefer existing `src/components/ui/*` primitives before hand-rolling markup.
+- Semantic colors only: `bg-primary`, `text-muted-foreground`, `border-border`, etc. Brand primary is `#FF6900` via `--primary` in `src/styles.css`.
+- Compose forms with `Field` / `FieldGroup` / `FieldLabel` + `Input`.
+- App chrome: `SidebarProvider` + `Sidebar` + `SidebarInset` (see `_app.tsx`).
+- Icons: `@phosphor-icons/react` (preset icon library).
+- Use `cn()` from `@/lib/utils` for conditional classes.
 
 MORE CLI:
-  search "<query>"   find any component / hook / doc / template / block
-  component --list   154 components by category
-  template --list    page + block recipes
-  docs <topic>       color, elevation, icons, illustrations, internationalization, layout, migration, motion, principles, shape, spacing, styling, theme, tokens, typography
-  swizzle <Name>     eject component source for deep customization
-  upgrade --apply    run after any @astryxdesign/core bump
-<!-- ASTRYX:END -->
+  apply --preset <code>   switch theme/fonts/icons on an existing project
+  info                    project config + installed components
+  docs <name>             documentation links for a component
+<!-- SHADCN:END -->

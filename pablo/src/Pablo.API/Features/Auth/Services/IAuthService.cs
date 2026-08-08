@@ -2,5 +2,5 @@ namespace Pablo.API.Features.Auth.Services;
 
 public interface IAuthService
 {
-    Task<LoginResponse> Login(LoginRequest request);
+    Task<LoginResponse> Login(LoginRequest request, CancellationToken cancellationToken = default);
 }

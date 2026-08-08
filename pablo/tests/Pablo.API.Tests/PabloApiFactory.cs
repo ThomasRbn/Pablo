@@ -19,6 +19,10 @@ public class PabloApiFactory : WebApplicationFactory<Program>
         builder.UseSetting(
             "ConnectionStrings:Default",
             "Host=localhost;Database=pablo-tests;Username=test;Password=test");
+        builder.UseSetting("Jwt:Issuer", "pablo-api-tests");
+        builder.UseSetting("Jwt:Audience", "pablo-web-tests");
+        builder.UseSetting("Jwt:SigningKey", "test-only-signing-key-at-least-32b");
+        builder.UseSetting("Jwt:ExpirationMinutes", "60");
 
         builder.ConfigureTestServices(services =>
         {

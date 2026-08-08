@@ -24,6 +24,7 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
     builder.Services.AddExceptionHandler<ProblemDetailsExceptionHandler>();
     builder.Services.AddProblemDetails(options =>
     {
@@ -68,6 +69,8 @@ try
     });
     app.UseExceptionHandler();
     app.UseStatusCodePages();
+    app.UseAuthentication();
+    app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");
 

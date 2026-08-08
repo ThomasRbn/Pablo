@@ -1,6 +1,6 @@
 using Pablo.API.Exceptions;
 
-namespace Pablo.API.Features.Auth;
+namespace Pablo.API.Features.Auth.Exceptions;
 
 public sealed class InvalidCredentialsException : Exception, IProblemDetailsException
 {

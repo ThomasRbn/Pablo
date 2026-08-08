@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+using Pablo.API.Features.Auth.Exceptions;
+
 namespace Pablo.API.Features.Auth.Validators;
 
 internal static class LoginRequestValidator

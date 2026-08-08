@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 using Pablo.API.Features.Auth;
+using Pablo.API.Features.Auth.Exceptions;
 using Pablo.API.Infrastructure.Identity;
 
 namespace Pablo.API.Tests.Features.Auth;
@@ -47,8 +48,38 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
 
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
         Assert.NotNull(loginResponseBody);
+        Assert.False(string.IsNullOrWhiteSpace(loginResponseBody.AccessToken));
+        Assert.Equal("Bearer", loginResponseBody.TokenType);
+        Assert.True(loginResponseBody.ExpiresIn > 0);
         Assert.Equal(email, loginResponseBody.Email);
         Assert.Equal(displayName, loginResponseBody.DisplayName);
+    }
+
+    [Fact]
+    public async Task Post_login_returns_unauthorized_after_lockout_threshold()
+    {
+        var client = factory.CreateClient();
+        var email = $"lockout-{Guid.NewGuid():N}@example.com";
+        await SeedUserAsync(email, ValidPassword, "John Doe");
+
+        var wrongPasswordRequest = new LoginRequest(Email: email, Password: "WrongPassword1!");
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var failedResponse = await client.PostAsJsonAsync("/api/auth/login", wrongPasswordRequest);
+            Assert.Equal(HttpStatusCode.Unauthorized, failedResponse.StatusCode);
+        }
+
+        var lockedResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(Email: email, Password: ValidPassword));
+        var problem = await lockedResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+        var expected = new InvalidCredentialsException();
+
+        Assert.Equal((HttpStatusCode)expected.StatusCode, lockedResponse.StatusCode);
+        Assert.NotNull(problem);
+        Assert.Equal(expected.Detail, problem.Detail);
+        Assert.Equal(expected.Title, problem.Title);
+        Assert.Equal(expected.StatusCode, problem.Status);
     }
 
     [Fact]

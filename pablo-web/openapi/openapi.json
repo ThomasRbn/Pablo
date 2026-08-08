@@ -84,12 +84,12 @@
     "schemas": {
       "LoginRequest": {
         "required": [
-          "email",
+          "username",
           "password"
         ],
         "type": "object",
         "properties": {
-          "email": {
+          "username": {
             "type": "string"
           },
           "password": {
@@ -103,6 +103,7 @@
           "tokenType",
           "expiresIn",
           "id",
+          "username",
           "email",
           "displayName"
         ],
@@ -123,6 +124,9 @@
             "format": "int32"
           },
           "id": {
+            "type": "string"
+          },
+          "username": {
             "type": "string"
           },
           "email": {

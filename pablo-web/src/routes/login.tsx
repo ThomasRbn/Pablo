@@ -30,22 +30,22 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
 	const { login } = useAuth();
 	const navigate = useNavigate();
-	const [email, setEmail] = useState("");
+	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 
-	const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
+	const handleLogIn = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError("");
-		if (!email || !password) {
-			setError("Please enter both email and password.");
+		if (!username || !password) {
+			setError("Please enter both username and password.");
 			return;
 		}
 
 		setIsLoading(true);
 		try {
-			await login({ email, password });
+			await login({ username, password });
 			await navigate({ to: "/" });
 		} catch (err) {
 			if (err instanceof ApiError) {
@@ -53,7 +53,7 @@ function LoginPage() {
 			} else if (err instanceof Error) {
 				setError(err.message);
 			} else {
-				setError("Unable to sign in. Please try again.");
+				setError("Unable to log in. Please try again.");
 			}
 		} finally {
 			setIsLoading(false);
@@ -70,30 +70,30 @@ function LoginPage() {
 
 				<Card className="w-full">
 					<CardHeader className="text-center">
-						<CardTitle>Sign in</CardTitle>
+						<CardTitle>Log in</CardTitle>
 						<CardDescription>
 							Enter your credentials to continue
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<form onSubmit={handleSignIn}>
+						<form onSubmit={handleLogIn}>
 							<FieldGroup>
 								{error ? (
 									<Alert variant="destructive">
-										<AlertTitle>Sign in failed</AlertTitle>
+										<AlertTitle>Log in failed</AlertTitle>
 										<AlertDescription>{error}</AlertDescription>
 									</Alert>
 								) : null}
 
 								<Field>
-									<FieldLabel htmlFor="email">Email</FieldLabel>
+									<FieldLabel htmlFor="username">Username or email</FieldLabel>
 									<Input
-										id="email"
-										type="email"
-										autoComplete="email"
-										placeholder="you@example.com"
-										value={email}
-										onChange={(e) => setEmail(e.target.value)}
+										id="username"
+										type="text"
+										autoComplete="username"
+										placeholder="root or you@example.com"
+										value={username}
+										onChange={(e) => setUsername(e.target.value)}
 									/>
 								</Field>
 
@@ -116,7 +116,7 @@ function LoginPage() {
 									disabled={isLoading}
 								>
 									{isLoading ? <Spinner data-icon="inline-start" /> : null}
-									Sign in
+									Log in
 								</Button>
 							</FieldGroup>
 						</form>

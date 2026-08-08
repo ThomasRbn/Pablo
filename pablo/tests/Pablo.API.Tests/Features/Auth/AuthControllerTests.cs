@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pablo.API.Features.Auth;
 using Pablo.API.Features.Auth.Exceptions;
 using Pablo.API.Infrastructure.Identity;
+using Pablo.API.Infrastructure.Persistence;
 
 namespace Pablo.API.Tests.Features.Auth;
 
@@ -20,30 +21,26 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     public static TheoryData<string?, string?, string, string> InvalidLoginCases => new()
     {
         // Missing / empty
-        { "test@example.com", "", "Password", InvalidLoginRequestException.Required("Password") },
-        { "", ValidPassword, "Email", InvalidLoginRequestException.Required("Email") },
-        { "test@example.com", null, "Password", InvalidLoginRequestException.Required("Password") },
-        { null, ValidPassword, "Email", InvalidLoginRequestException.Required("Email") },
+        { "testuser", "", "Password", InvalidLoginRequestException.Required("Password") },
+        { "", ValidPassword, "Username", InvalidLoginRequestException.Required("Username") },
+        { "testuser", null, "Password", InvalidLoginRequestException.Required("Password") },
+        { null, ValidPassword, "Username", InvalidLoginRequestException.Required("Username") },
 
         // Whitespace
-        { "   ", ValidPassword, "Email", InvalidLoginRequestException.Whitespace("Email") },
-        { "test@example.com", "        ", "Password", InvalidLoginRequestException.Whitespace("Password") },
-
-        // Invalid email format
-        { "not-an-email", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
-        { "missing-domain@", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
-        { "@example.com", ValidPassword, "Email", InvalidLoginRequestException.InvalidEmail() },
+        { "   ", ValidPassword, "Username", InvalidLoginRequestException.Whitespace("Username") },
+        { "testuser", "        ", "Password", InvalidLoginRequestException.Whitespace("Password") },
     };
 
     [Fact]
-    public async Task Post_login_returns_ok()
+    public async Task Post_login_returns_ok_with_email()
     {
         var client = factory.CreateClient();
         var email = $"ok-{Guid.NewGuid():N}@example.com";
+        var username = $"user-{Guid.NewGuid():N}";
         const string displayName = "John Doe";
-        var userId = await SeedUserAsync(email, ValidPassword, displayName);
+        var userId = await SeedUserAsync(username, email, ValidPassword, displayName);
 
-        var loginRequest = new LoginRequest(Email: email, Password: ValidPassword);
+        var loginRequest = new LoginRequest(Username: email, Password: ValidPassword);
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
         var loginResponseBody = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 
@@ -52,6 +49,7 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         Assert.False(string.IsNullOrWhiteSpace(loginResponseBody.AccessToken));
         Assert.Equal("Bearer", loginResponseBody.TokenType);
         Assert.True(loginResponseBody.ExpiresIn > 0);
+        Assert.Equal(username, loginResponseBody.Username);
         Assert.Equal(email, loginResponseBody.Email);
         Assert.Equal(displayName, loginResponseBody.DisplayName);
 
@@ -63,14 +61,53 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     }
 
     [Fact]
+    public async Task Post_login_returns_ok_with_username()
+    {
+        var client = factory.CreateClient();
+        var email = $"ok-name-{Guid.NewGuid():N}@example.com";
+        var username = $"user-{Guid.NewGuid():N}";
+        const string displayName = "Jane Doe";
+        await SeedUserAsync(username, email, ValidPassword, displayName);
+
+        var loginRequest = new LoginRequest(Username: username, Password: ValidPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginResponseBody = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.NotNull(loginResponseBody);
+        Assert.Equal(username, loginResponseBody.Username);
+        Assert.Equal(email, loginResponseBody.Email);
+        Assert.Equal(displayName, loginResponseBody.DisplayName);
+    }
+
+    [Fact]
+    public async Task Post_login_returns_ok_for_seeded_root_user()
+    {
+        var client = factory.CreateClient();
+
+        var loginRequest = new LoginRequest(
+            Username: DatabaseSeeder.RootUsername,
+            Password: DatabaseSeeder.RootPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+        var loginResponseBody = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.NotNull(loginResponseBody);
+        Assert.Equal(DatabaseSeeder.RootUsername, loginResponseBody.Username);
+        Assert.Equal(DatabaseSeeder.RootEmail, loginResponseBody.Email);
+        Assert.Equal(DatabaseSeeder.RootDisplayName, loginResponseBody.DisplayName);
+    }
+
+    [Fact]
     public async Task Post_login_returns_unauthorized_after_lockout_threshold()
     {
         var client = factory.CreateClient();
         var email = $"lockout-{Guid.NewGuid():N}@example.com";
-        await SeedUserAsync(email, ValidPassword, "John Doe");
+        var username = $"lockout-{Guid.NewGuid():N}";
+        await SeedUserAsync(username, email, ValidPassword, "John Doe");
 
         var maxFailedAttempts = await GetMaxFailedAccessAttemptsAsync();
-        var wrongPasswordRequest = new LoginRequest(Email: email, Password: "WrongPassword1!");
+        var wrongPasswordRequest = new LoginRequest(Username: email, Password: "WrongPassword1!");
         for (var attempt = 0; attempt < maxFailedAttempts; attempt++)
         {
             var failedResponse = await client.PostAsJsonAsync("/api/auth/login", wrongPasswordRequest);
@@ -79,7 +116,7 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
 
         var lockedResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new LoginRequest(Email: email, Password: ValidPassword));
+            new LoginRequest(Username: email, Password: ValidPassword));
         var problem = await lockedResponse.Content.ReadFromJsonAsync<ProblemDetails>();
         var expected = new InvalidCredentialsException();
 
@@ -95,9 +132,10 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     {
         var client = factory.CreateClient();
         var email = $"wrong-pw-{Guid.NewGuid():N}@example.com";
-        await SeedUserAsync(email, ValidPassword, "John Doe");
+        var username = $"wrong-pw-{Guid.NewGuid():N}";
+        await SeedUserAsync(username, email, ValidPassword, "John Doe");
 
-        var loginRequest = new LoginRequest(Email: email, Password: "WrongPassword1!");
+        var loginRequest = new LoginRequest(Username: email, Password: "WrongPassword1!");
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
         var problem = await loginResponse.Content.ReadFromJsonAsync<ProblemDetails>();
         var expected = new InvalidCredentialsException();
@@ -110,11 +148,11 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     }
 
     [Fact]
-    public async Task Post_login_returns_unauthorized_when_email_is_unknown()
+    public async Task Post_login_returns_unauthorized_when_username_is_unknown()
     {
         var client = factory.CreateClient();
         var loginRequest = new LoginRequest(
-            Email: $"unknown-{Guid.NewGuid():N}@example.com",
+            Username: $"unknown-{Guid.NewGuid():N}",
             Password: ValidPassword);
 
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
@@ -131,13 +169,13 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
     [Theory]
     [MemberData(nameof(InvalidLoginCases))]
     public async Task Post_login_returns_error_when_request_is_invalid(
-        string? email,
+        string? username,
         string? password,
         string expectedField,
         string expectedMessage)
     {
         var client = factory.CreateClient();
-        var loginRequest = new LoginRequest(Email: email!, Password: password!);
+        var loginRequest = new LoginRequest(Username: username!, Password: password!);
 
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
         var problem = await loginResponse.Content.ReadFromJsonAsync<ValidationProblemDetails>();
@@ -173,14 +211,18 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         return userManager.Options.Lockout.MaxFailedAccessAttempts;
     }
 
-    private async Task<string> SeedUserAsync(string email, string password, string displayName)
+    private async Task<string> SeedUserAsync(
+        string username,
+        string email,
+        string password,
+        string displayName)
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AuthenticationUser>>();
 
         var user = new AuthenticationUser
         {
-            UserName = email,
+            UserName = username,
             Email = email,
             DisplayName = displayName,
         };

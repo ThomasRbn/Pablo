@@ -2,8 +2,9 @@ SOLUTION := pablo/pablo.slnx
 API_PROJECT := pablo/src/Pablo.API
 WEB_DIR := pablo-web
 COMPOSE := docker compose -f docker/docker-compose.yml
+EF := dotnet ef --project $(API_PROJECT)
 
-.PHONY: install-hooks restore build run watch test test-backend format clean db-up db-down db-logs
+.PHONY: install-hooks restore build run watch test test-backend format clean db-up db-down db-logs db-migrate db-reset
 
 install-hooks:
 	cp hooks/pre-commit .git/hooks/pre-commit
@@ -42,3 +43,13 @@ db-down:
 
 db-logs:
 	$(COMPOSE) logs -f postgres
+
+db-migrate:
+	$(EF) database update
+
+# Drop Postgres volume, recreate, apply migrations. Root user (root/root) is seeded on next API start.
+db-reset:
+	$(COMPOSE) down -v
+	$(COMPOSE) up -d --wait
+	$(EF) database update
+	@echo "Database reset. Start the API (make run) to seed the root user (username/password: root/root)."

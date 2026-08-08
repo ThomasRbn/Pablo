@@ -11,6 +11,7 @@ export interface LoginResponse {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   expiresIn: number | string;
   id: string;
+  username: string;
   email: string;
   displayName: string;
 }

@@ -18,7 +18,7 @@ public sealed class AuthService(
         cancellationToken.ThrowIfCancellationRequested();
         LoginRequestValidator.Validate(request);
 
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await FindByUsernameOrEmailAsync(request.Username);
         if (user is null || await userManager.IsLockedOutAsync(user))
         {
             throw new InvalidCredentialsException();
@@ -38,7 +38,19 @@ public sealed class AuthService(
             TokenType: "Bearer",
             ExpiresIn: accessToken.ExpiresInSeconds,
             Id: user.Id,
-            Email: user.Email!,
+            Username: user.UserName!,
+            Email: user.Email ?? string.Empty,
             DisplayName: user.DisplayName);
+    }
+
+    private async Task<AuthenticationUser?> FindByUsernameOrEmailAsync(string usernameOrEmail)
+    {
+        var user = await userManager.FindByNameAsync(usernameOrEmail);
+        if (user is not null)
+        {
+            return user;
+        }
+
+        return await userManager.FindByEmailAsync(usernameOrEmail);
     }
 }

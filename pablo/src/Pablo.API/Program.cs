@@ -1,6 +1,7 @@
 using Pablo.API.Exceptions;
 using Pablo.API.Features.Auth.Services;
 using Pablo.API.Infrastructure;
+using Pablo.API.Infrastructure.Persistence;
 using Pablo.API.Middleware;
 
 using Serilog;
@@ -47,6 +48,8 @@ try
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
+
+    await DatabaseSeeder.SeedAsync(app.Services);
 
     if (app.Environment.IsDevelopment())
     {

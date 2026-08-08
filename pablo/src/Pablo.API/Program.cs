@@ -1,3 +1,4 @@
+using Pablo.API.Exceptions;
 using Pablo.API.Infrastructure;
 
 using Serilog;
@@ -17,6 +18,24 @@ try
         .WriteTo.Console());
 
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddProblemDetails(options =>
+    {
+        options.CustomizeProblemDetails = context =>
+        {
+            if (context.Exception is IProblemDetailsException problem)
+            {
+                context.ProblemDetails.Status = problem.StatusCode;
+                context.ProblemDetails.Title = problem.Title;
+                context.ProblemDetails.Detail = problem.Detail;
+                context.HttpContext.Response.StatusCode = problem.StatusCode;
+
+                if (problem.Errors is { Count: > 0 } errors)
+                {
+                    context.ProblemDetails.Extensions["errors"] = errors;
+                }
+            }
+        };
+    });
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
 
@@ -27,6 +46,8 @@ try
         app.MapOpenApi();
     }
 
+    app.UseExceptionHandler();
+    app.UseStatusCodePages();
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";

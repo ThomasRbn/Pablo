@@ -77,7 +77,7 @@ Pablo.API/
 
 ### Tests
 
-See [`tests/Pablo.API.Tests/README.md`](tests/Pablo.API.Tests/README.md).
+See [`tests/Pablo.API.Tests/README.md`](tests/Pablo.API.Tests/README.md) (layout) and [`tests/Pablo.API.Tests/TESTING.md`](tests/Pablo.API.Tests/TESTING.md) (how to write tests).
 
 **Hard rule:** test folders mirror the API. Feature tests live under `Features/{Name}/` with the same `{Name}` as `src/Pablo.API/Features/{Name}/`. Namespaces match folders (`Pablo.API.Tests.Features.{Name}`).
 

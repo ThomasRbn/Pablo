@@ -2,6 +2,8 @@
 
 Integration tests for `Pablo.API` using `WebApplicationFactory` (`PabloApiFactory`).
 
+How to add a test file, and what `[Fact]` / `[Theory]` mean: [TESTING.md](TESTING.md).
+
 ## Architecture rule
 
 **The test project must mirror the API project layout.**

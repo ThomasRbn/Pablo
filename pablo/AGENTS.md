@@ -9,16 +9,19 @@ Frontend (React / Astryx) rules live in `pablo-web/AGENTS.md`.
 Single API project under `pablo/`. Features are vertical slices in `Features/{Name}/`; shared EF/Identity lives in `Infrastructure/`.
 
 ```
-Pablo.API   (only project in pablo.slnx)
+Pablo.API
+Pablo.API.Tests
 ```
 
 ```mermaid
 flowchart TB
   API[Pablo.API]
+  Tests[Pablo.API.Tests]
   Features[Features per slice]
   Infra[Infrastructure shared]
   API --> Features
   API --> Infra
+  Tests --> API
 ```
 
 | Location | Role |
@@ -26,7 +29,7 @@ flowchart TB
 | `src/Pablo.API` | Host, HTTP surface, features, shared infrastructure |
 | `src/Pablo.API/Features/{Name}/` | One subfolder per feature (controllers, services, DTOs, validators) |
 | `src/Pablo.API/Infrastructure/` | DbContext, migrations, Identity, external clients, `AddInfrastructure` |
-| `tests/` | Reserved for `Pablo.API.Tests` (none yet) |
+| `tests/Pablo.API.Tests` | Integration tests via `WebApplicationFactory` (`PabloApiFactory`) |
 
 **Not CQRS yet.** Use plain feature services. Do not add MediatR, Commands, Queries, or Handlers unless asked. CQRS may come later.
 
@@ -72,10 +75,17 @@ Pablo.API/
   appsettings.Development.json
 ```
 
-### Tests (when added)
+### Tests
+
+See [`tests/Pablo.API.Tests/README.md`](tests/Pablo.API.Tests/README.md) (layout) and [`tests/Pablo.API.Tests/TESTING.md`](tests/Pablo.API.Tests/TESTING.md) (how to write tests).
+
+**Hard rule:** test folders mirror the API. Feature tests live under `Features/{Name}/` with the same `{Name}` as `src/Pablo.API/Features/{Name}/`. Namespaces match folders (`Pablo.API.Tests.Features.{Name}`).
 
 ```
 pablo/tests/Pablo.API.Tests/
+  PabloApiFactory.cs          # WebApplicationFactory; swaps EF to InMemory
+  HealthEndpointTests.cs      # host-level (/health) — not a feature
+  Features/{Name}/            # mirrors Pablo.API/Features/{Name}/
 ```
 
 ## Workflow for a new feature
@@ -84,6 +94,7 @@ pablo/tests/Pablo.API.Tests/
 2. Add controller/endpoints that depend on the feature service
 3. Add entities/configs/migrations under `Infrastructure/` when persistence is required
 4. Register feature services in DI (feature extension and/or `AddInfrastructure`) and call from `Program.cs`
+5. Add tests under `tests/Pablo.API.Tests/Features/{Name}/` (same layout as the API)
 
 ## Tooling
 
@@ -98,8 +109,9 @@ Follow `.editorconfig`: PascalCase types, `I` + PascalCase interfaces, `_camelCa
 
 ## Self-check before finishing
 
-- [ ] Only `Pablo.API` is in the solution (no extra class libraries unless asked)
+- [ ] Only `Pablo.API` (+ `Pablo.API.Tests`) in the solution (no extra class libraries unless asked)
 - [ ] New feature code lives under `Features/{Name}/`
+- [ ] Feature tests live under `tests/Pablo.API.Tests/Features/{Name}/` (mirrors the API)
 - [ ] Shared EF / Identity / external clients live under `Infrastructure/`
 - [ ] Controllers have no business logic
 - [ ] Namespaces match folders

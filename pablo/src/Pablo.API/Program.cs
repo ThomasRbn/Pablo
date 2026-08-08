@@ -1,6 +1,7 @@
 using Pablo.API.Exceptions;
 using Pablo.API.Features.Auth.Services;
 using Pablo.API.Infrastructure;
+using Pablo.API.Middleware;
 
 using Serilog;
 
@@ -23,6 +24,7 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddExceptionHandler<ProblemDetailsExceptionHandler>();
     builder.Services.AddProblemDetails(options =>
     {
         options.CustomizeProblemDetails = context =>
@@ -58,12 +60,14 @@ try
         app.MapOpenApi();
     }
 
-    app.UseExceptionHandler();
-    app.UseStatusCodePages();
+    // Serilog must wrap UseExceptionHandler so handled IProblemDetailsException
+    // responses (4xx) are not logged as unhandled request failures.
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
     });
+    app.UseExceptionHandler();
+    app.UseStatusCodePages();
     app.MapControllers();
     app.MapHealthChecks("/health");
 

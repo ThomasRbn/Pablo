@@ -1,6 +1,7 @@
 using Pablo.API.Exceptions;
 using Pablo.API.Features.Auth.Services;
 using Pablo.API.Infrastructure;
+using Pablo.API.Infrastructure.Persistence;
 using Pablo.API.Middleware;
 
 using Serilog;
@@ -50,6 +51,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
+        await DatabaseSeeder.SeedAsync(app.Services);
         app.MapOpenApi();
     }
 

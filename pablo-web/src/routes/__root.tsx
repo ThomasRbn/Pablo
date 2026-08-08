@@ -1,8 +1,8 @@
-import { Theme } from "@astryxdesign/core";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
-import { pabloTheme } from "../theme/pablo";
+import { AuthProvider } from "#/auth/AuthProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const Devtools = import.meta.env.DEV
 	? lazy(() =>
@@ -33,13 +33,15 @@ export const Route = createRootRoute({
 
 function RootComponent() {
 	return (
-		<Theme theme={pabloTheme}>
-			<Outlet />
-			{Devtools ? (
-				<Suspense>
-					<Devtools />
-				</Suspense>
-			) : null}
-		</Theme>
+		<TooltipProvider>
+			<AuthProvider>
+				<Outlet />
+				{Devtools ? (
+					<Suspense>
+						<Devtools />
+					</Suspense>
+				) : null}
+			</AuthProvider>
+		</TooltipProvider>
 	);
 }

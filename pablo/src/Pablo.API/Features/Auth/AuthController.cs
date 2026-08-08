@@ -10,13 +10,13 @@ namespace Pablo.API.Features.Auth;
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("login")]
-    public async Task<IActionResult> Login(
+    public async Task<ActionResult<LoginResponse>> Login(
         [FromBody] LoginRequest? request,
         CancellationToken cancellationToken)
     {
         if (request is null)
         {
-            throw InvalidLoginRequestException.MissingRequired("Email", "Password");
+            throw InvalidLoginRequestException.MissingRequired("Username", "Password");
         }
 
         var result = await authService.Login(request, cancellationToken);

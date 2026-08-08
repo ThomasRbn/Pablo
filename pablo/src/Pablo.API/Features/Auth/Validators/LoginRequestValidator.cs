@@ -1,30 +1,19 @@
-using System.ComponentModel.DataAnnotations;
-
 using Pablo.API.Features.Auth.Exceptions;
 
 namespace Pablo.API.Features.Auth.Validators;
 
 internal static class LoginRequestValidator
 {
-    private static readonly EmailAddressAttribute EmailValidator = new();
-
     public static void Validate(LoginRequest request)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
-        AddRequiredOrWhitespace(errors, "Email", request.Email);
+        AddRequiredOrWhitespace(errors, "Username", request.Username);
         AddRequiredOrWhitespace(errors, "Password", request.Password);
 
         if (errors.Count > 0)
         {
             throw new InvalidLoginRequestException(errors);
-        }
-
-        if (!EmailValidator.IsValid(request.Email))
-        {
-            throw InvalidLoginRequestException.For(
-                "Email",
-                InvalidLoginRequestException.InvalidEmail());
         }
     }
 

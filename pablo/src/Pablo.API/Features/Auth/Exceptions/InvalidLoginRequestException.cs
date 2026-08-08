@@ -49,6 +49,4 @@ public sealed class InvalidLoginRequestException : Exception, IProblemDetailsExc
     public static string Required(string field) => $"The {field} field is required.";
 
     public static string Whitespace(string field) => $"The {field} field must not be whitespace.";
-
-    public static string InvalidEmail() => "The Email field is not a valid email address.";
 }

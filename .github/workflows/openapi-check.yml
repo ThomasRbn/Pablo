@@ -1,0 +1,104 @@
+name: OpenAPI Drift
+
+on:
+  push:
+
+concurrency:
+  group: openapi-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check OpenAPI client drift
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: pablo
+          POSTGRES_PASSWORD: pablo
+          POSTGRES_DB: pablo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pablo -d pablo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Restore
+        run: dotnet restore pablo/pablo.slnx
+
+      - name: Install EF tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Migrate database
+        run: |
+          dotnet ef database update --project pablo/src/Pablo.API \
+            --connection "Host=localhost;Port=5432;Database=pablo;Username=pablo;Password=pablo"
+
+      - name: Build API
+        run: dotnet build pablo/pablo.slnx --no-restore
+
+      - name: Install frontend dependencies
+        working-directory: pablo-web
+        run: bun install --frozen-lockfile
+
+      - name: Start API
+        run: |
+          ASPNETCORE_ENVIRONMENT=Development \
+          ASPNETCORE_URLS=http://127.0.0.1:8000 \
+          ConnectionStrings__Default="Host=localhost;Port=5432;Database=pablo;Username=pablo;Password=pablo" \
+          Jwt__Issuer=pablo-api \
+          Jwt__Audience=pablo-web \
+          Jwt__SigningKey=ci-only-signing-key-at-least-32-bytes \
+          Jwt__ExpirationMinutes=60 \
+          dotnet run --project pablo/src/Pablo.API --no-build &
+          echo $! > /tmp/pablo-api.pid
+
+      - name: Wait for API
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become healthy in time" >&2
+          exit 1
+
+      - name: Regenerate OpenAPI client
+        working-directory: pablo-web
+        run: |
+          bun run api:fetch-openapi
+          bun run api:generate
+
+      - name: Fail if generated files drifted
+        run: |
+          if ! git diff --quiet -- pablo-web/openapi/openapi.json pablo-web/src/api/generated; then
+            echo "OpenAPI client is out of date. Run api:fetch-openapi && api:generate and commit." >&2
+            git --no-pager diff -- pablo-web/openapi/openapi.json pablo-web/src/api/generated
+            exit 1
+          fi
+
+      - name: Stop API
+        if: always()
+        run: |
+          if [ -f /tmp/pablo-api.pid ]; then
+            kill "$(cat /tmp/pablo-api.pid)" || true
+          fi

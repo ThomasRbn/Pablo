@@ -18,7 +18,7 @@ public sealed class AuthService(
         cancellationToken.ThrowIfCancellationRequested();
         LoginRequestValidator.Validate(request);
 
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await FindByUsernameOrEmailAsync(request.Username);
         if (user is null || await userManager.IsLockedOutAsync(user))
         {
             throw new InvalidCredentialsException();
@@ -38,7 +38,20 @@ public sealed class AuthService(
             TokenType: "Bearer",
             ExpiresIn: accessToken.ExpiresInSeconds,
             Id: user.Id,
-            Email: user.Email!,
+            Username: user.UserName!,
+            Email: user.Email ?? string.Empty,
             DisplayName: user.DisplayName);
+    }
+
+    private async Task<AuthenticationUser?> FindByUsernameOrEmailAsync(string usernameOrEmail)
+    {
+        // Email-shaped identifiers must resolve by email only so a username equal to
+        // another user's email cannot squat on that login path.
+        if (usernameOrEmail.Contains('@', StringComparison.Ordinal))
+        {
+            return await userManager.FindByEmailAsync(usernameOrEmail);
+        }
+
+        return await userManager.FindByNameAsync(usernameOrEmail);
     }
 }

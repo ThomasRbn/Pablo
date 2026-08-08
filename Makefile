@@ -47,12 +47,12 @@ db-logs:
 db-migrate:
 	$(EF) database update
 
-# Drop Postgres volume, recreate, apply migrations. Root user (root/root) is seeded on next Development API start.
+# Drop Postgres volume, recreate, apply migrations. Root user is seeded on next Development API start.
 db-reset:
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --wait
 	$(EF) database update
-	@echo "Database reset. Start the API with ASPNETCORE_ENVIRONMENT=Development (make run) to seed root/root."
+	@echo "Database reset. Start the API with ASPNETCORE_ENVIRONMENT=Development (make run) to seed root / Root1!dev."
 
 # Requires a running API on localhost:8000 (Development). Fails if committed OpenAPI/client drifts.
 openapi-check:

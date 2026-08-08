@@ -8,7 +8,8 @@ namespace Pablo.API.Infrastructure.Persistence;
 public static class DatabaseSeeder
 {
     public const string RootUsername = "root";
-    public const string RootPassword = "root";
+    // Meets Identity's default complexity rules (dev-only seed; never used in production).
+    public const string RootPassword = "Root1!dev";
     public const string RootEmail = "root@localhost";
     public const string RootDisplayName = "Administrator";
 

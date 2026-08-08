@@ -61,12 +61,6 @@ public static class DependencyInjection
             .AddIdentityCore<AuthenticationUser>(options =>
             {
                 options.User.RequireUniqueEmail = true;
-                // Allow short bootstrap passwords (e.g. root/root) in local resets.
-                options.Password.RequiredLength = 4;
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireNonAlphanumeric = false;
                 options.Lockout.AllowedForNewUsers = true;
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);

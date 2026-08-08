@@ -17,7 +17,10 @@ const config = defineConfig(({ command }) => ({
 			"/api": {
 				target: "http://localhost:8000",
 				changeOrigin: true,
-				rewrite: (path) => path.replace(/^\/api/, ""),
+			},
+			"/openapi": {
+				target: "http://localhost:8000",
+				changeOrigin: true,
 			},
 		},
 	},

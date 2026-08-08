@@ -7,20 +7,22 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "generate-routes": "tsr generate",
-    "theme:build": "bun run astryx theme build src/theme/pablo-theme.ts",
-    "prebuild": "bun run generate-routes",
-    "build": "vite build",
-    "preview": "vite preview",
-    "format": "biome format",
-    "lint": "biome lint",
-    "check": "biome check",
-    "typecheck": "tsc --noEmit",
-    "astryx": "node node_modules/@astryxdesign/cli/bin/astryx.mjs"
+		"generate-routes": "tsr generate",
+		"api:fetch-openapi": "mkdir -p openapi && curl -fsS http://localhost:8000/openapi/v1.json -o openapi/openapi.json",
+		"api:generate": "orval --config orval.config.ts",
+		"prebuild": "bun run generate-routes",
+		"build": "vite build",
+		"preview": "vite preview",
+		"format": "biome format",
+		"lint": "biome lint",
+		"check": "biome check",
+		"typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.2.0",
     "@astryxdesign/theme-neutral": "^0.2.0",
+    "@heroicons/react": "^2.2.0",
+    "@stylexjs/stylex": "^0.19.0",
     "@tanstack/react-router": "1.170.18",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -38,6 +40,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "orval": "^8.24.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"

@@ -12,6 +12,9 @@ namespace Pablo.API.Tests;
 
 public class PabloApiFactory : WebApplicationFactory<Program>
 {
+    // Unique per factory instance so parallel test classes do not share InMemory state.
+    private readonly string _databaseName = Guid.NewGuid().ToString("N");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -33,7 +36,7 @@ public class PabloApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<PabloDbContext>();
 
             services.AddDbContext<PabloDbContext>(options =>
-                options.UseInMemoryDatabase("PabloApiTests"));
+                options.UseInMemoryDatabase(_databaseName));
         });
     }
 }

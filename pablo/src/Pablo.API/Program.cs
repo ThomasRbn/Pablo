@@ -32,15 +32,7 @@ try
         {
             if (context.Exception is IProblemDetailsException problem)
             {
-                context.ProblemDetails.Status = problem.StatusCode;
-                context.ProblemDetails.Title = problem.Title;
-                context.ProblemDetails.Detail = problem.Detail;
-                context.HttpContext.Response.StatusCode = problem.StatusCode;
-
-                if (problem.Errors is { Count: > 0 } errors)
-                {
-                    context.ProblemDetails.Extensions["errors"] = errors;
-                }
+                ProblemDetailsExceptionMapper.Apply(context, problem);
             }
         };
     });

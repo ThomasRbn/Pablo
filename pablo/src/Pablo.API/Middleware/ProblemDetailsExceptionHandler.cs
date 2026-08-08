@@ -12,23 +12,15 @@ public sealed class ProblemDetailsExceptionHandler(IProblemDetailsService proble
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not IProblemDetailsException problem)
+        if (exception is not IProblemDetailsException)
         {
             return false;
         }
-
-        httpContext.Response.StatusCode = problem.StatusCode;
 
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             Exception = exception,
-            ProblemDetails =
-            {
-                Status = problem.StatusCode,
-                Title = problem.Title,
-                Detail = problem.Detail,
-            },
         });
     }
 }

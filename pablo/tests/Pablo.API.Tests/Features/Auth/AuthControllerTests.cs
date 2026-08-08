@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -40,7 +41,7 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         var client = factory.CreateClient();
         var email = $"ok-{Guid.NewGuid():N}@example.com";
         const string displayName = "John Doe";
-        await SeedUserAsync(email, ValidPassword, displayName);
+        var userId = await SeedUserAsync(email, ValidPassword, displayName);
 
         var loginRequest = new LoginRequest(Email: email, Password: ValidPassword);
         var loginResponse = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
@@ -53,6 +54,12 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         Assert.True(loginResponseBody.ExpiresIn > 0);
         Assert.Equal(email, loginResponseBody.Email);
         Assert.Equal(displayName, loginResponseBody.DisplayName);
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(loginResponseBody.AccessToken);
+        Assert.Equal(userId, jwt.Subject);
+        Assert.Equal(email, jwt.Claims.Single(c => c.Type == JwtRegisteredClaimNames.Email).Value);
+        Assert.Equal(displayName, jwt.Claims.Single(c => c.Type == JwtRegisteredClaimNames.UniqueName).Value);
+        Assert.True(jwt.ValidTo > DateTime.UtcNow);
     }
 
     [Fact]
@@ -62,8 +69,9 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         var email = $"lockout-{Guid.NewGuid():N}@example.com";
         await SeedUserAsync(email, ValidPassword, "John Doe");
 
+        var maxFailedAttempts = await GetMaxFailedAccessAttemptsAsync();
         var wrongPasswordRequest = new LoginRequest(Email: email, Password: "WrongPassword1!");
-        for (var attempt = 0; attempt < 5; attempt++)
+        for (var attempt = 0; attempt < maxFailedAttempts; attempt++)
         {
             var failedResponse = await client.PostAsJsonAsync("/api/auth/login", wrongPasswordRequest);
             Assert.Equal(HttpStatusCode.Unauthorized, failedResponse.StatusCode);
@@ -158,20 +166,27 @@ public class AuthControllerTests(PabloApiFactory factory) : IClassFixture<PabloA
         Assert.Equal(HttpStatusCode.BadRequest, loginResponse.StatusCode);
     }
 
-    private async Task SeedUserAsync(string email, string password, string displayName)
+    private async Task<int> GetMaxFailedAccessAttemptsAsync()
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AuthenticationUser>>();
+        return userManager.Options.Lockout.MaxFailedAccessAttempts;
+    }
+
+    private async Task<string> SeedUserAsync(string email, string password, string displayName)
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AuthenticationUser>>();
 
-        var result = await userManager.CreateAsync(
-            new AuthenticationUser
-            {
-                UserName = email,
-                Email = email,
-                DisplayName = displayName,
-            },
-            password);
+        var user = new AuthenticationUser
+        {
+            UserName = email,
+            Email = email,
+            DisplayName = displayName,
+        };
+        var result = await userManager.CreateAsync(user, password);
 
         Assert.True(result.Succeeded, string.Join("; ", result.Errors.Select(e => e.Description)));
+        return user.Id;
     }
 }
